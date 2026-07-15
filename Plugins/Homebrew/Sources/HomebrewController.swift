@@ -637,7 +637,7 @@ public final class HomebrewController: ObservableObject {
         clearLogs()
         appendLog("[Command] brew \(args.joined(separator: " "))")
         
-        Task {
+        Task { [self] in
             let success: Bool
             do {
                 let status = try await runner.run(

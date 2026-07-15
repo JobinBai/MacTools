@@ -987,9 +987,10 @@ final class LaunchpadDragCoordinator: ObservableObject {
         let dx = abs(derivedMinX - space.viewportMinX), dy = abs(origin.y - space.viewportTopY)
         let line = "page=\(currentPage) pushed=(\(space.viewportMinX),\(space.viewportTopY)) " +
                    "derived=(\(derivedMinX),\(origin.y)) d=(\(dx),\(dy))\n"
+        let probePath = Self.probePath
         Self.probeQueue.async {
             guard let data = line.data(using: .utf8),
-                  let handle = FileHandle(forWritingAtPath: Self.probePath) ?? Self.createProbeLog() else { return }
+                  let handle = FileHandle(forWritingAtPath: probePath) ?? Self.createProbeLog(atPath: probePath) else { return }
             handle.seekToEndOfFile()
             handle.write(data)
             try? handle.close()
@@ -1014,9 +1015,9 @@ final class LaunchpadDragCoordinator: ObservableObject {
             try? handle.close()
         }
     }
-    private static func createProbeLog() -> FileHandle? {
-        FileManager.default.createFile(atPath: probePath, contents: nil)
-        return FileHandle(forWritingAtPath: probePath)
+    private nonisolated static func createProbeLog(atPath path: String) -> FileHandle? {
+        FileManager.default.createFile(atPath: path, contents: nil)
+        return FileHandle(forWritingAtPath: path)
     }
     #else
     private func scheduleGeometryProbe() {}
