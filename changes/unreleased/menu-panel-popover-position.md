@@ -4,4 +4,4 @@ type: fixed
 area: Menu Bar
 ---
 
-The menu panel now opens below its menu-bar icon on macOS 27 while keeping keyboard focus on the active panel tab.
+The menu panel now stays anchored below its menu-bar icon on macOS 27 and opens without a misleading initial toolbar focus while preserving keyboard navigation.

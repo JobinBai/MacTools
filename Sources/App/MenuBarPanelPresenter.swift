@@ -158,7 +158,7 @@ final class MenuBarPanelPresenter: NSObject {
         updatePanelSurfaceVisibility(for: tab(for: panel), isPanelVisible: true)
 
         if wasShown {
-            focus(popover)
+            clearAutomaticInitialFocus(in: popover)
             scheduleHeightRefresh(for: tab(for: panel))
             return
         }
@@ -205,23 +205,21 @@ final class MenuBarPanelPresenter: NSObject {
 
     private func show(_ popover: NSPopover, relativeTo button: NSStatusBarButton) {
         applyCurrentAppearance()
+        NSApplication.shared.activate()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         applyCurrentAppearance()
-        focus(popover)
     }
 
-    private func focus(_ popover: NSPopover) {
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        popover.contentViewController?.view.window?.makeKey()
-
-        Task { @MainActor [weak popover] in
-            await Task.yield()
-            guard let popover, popover.isShown else {
-                return
-            }
-
-            popover.contentViewController?.view.window?.makeKey()
+    private func clearAutomaticInitialFocus(in popover: NSPopover) {
+        guard let window = popover.contentViewController?.view.window else {
+            return
         }
+
+        Self.clearAutomaticInitialFocus(in: window)
+    }
+
+    static func clearAutomaticInitialFocus(in window: NSWindow) {
+        window.makeFirstResponder(nil)
     }
 
     private func observeAppearancePreference() {
@@ -402,6 +400,14 @@ final class MenuBarPanelPresenter: NSObject {
 }
 
 extension MenuBarPanelPresenter: NSPopoverDelegate {
+    func popoverDidShow(_ notification: Notification) {
+        guard let shownPopover = notification.object as? NSPopover, shownPopover === popover else {
+            return
+        }
+
+        clearAutomaticInitialFocus(in: shownPopover)
+    }
+
     func popoverDidClose(_ notification: Notification) {
         if let closedPopover = notification.object as? NSPopover, closedPopover === popover {
             updateContent(
@@ -646,7 +652,6 @@ private struct MenuBarPanelToolbar: View {
 private struct MenuBarPanelTabSwitcher: View {
     let selectedTab: MenuBarPanelTab
     let onTabSelection: (MenuBarPanelTab) -> Void
-    @FocusState private var focusedTab: MenuBarPanelTab?
 
     var body: some View {
         HStack(spacing: 2) {
@@ -665,7 +670,6 @@ private struct MenuBarPanelTabSwitcher: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .focused($focusedTab, equals: tab)
                 .help(tab.accessibilityTitle)
                 .accessibilityLabel(tab.accessibilityTitle)
                 .background {
@@ -679,7 +683,6 @@ private struct MenuBarPanelTabSwitcher: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(0.06))
         }
-        .defaultFocus($focusedTab, selectedTab)
     }
 }
 

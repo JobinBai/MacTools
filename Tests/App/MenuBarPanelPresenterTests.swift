@@ -48,6 +48,17 @@ final class MenuBarPanelPresenterTests: XCTestCase {
         XCTAssertEqual(model.contentHeight, 100)
     }
 
+    func testClearingAutomaticInitialFocusLeavesTheWindowAsFirstResponder() {
+        let window = makeWindow()
+        let textField = NSTextField()
+        window.contentView?.addSubview(textField)
+        XCTAssertTrue(window.makeFirstResponder(textField))
+
+        MenuBarPanelPresenter.clearAutomaticInitialFocus(in: window)
+
+        XCTAssertTrue(window.firstResponder === window)
+    }
+
     func testContainsPresentedWindowIncludesMarkedSecondaryPanelWindow() {
         let presenter = makePresenter()
         let window = makeWindow()
