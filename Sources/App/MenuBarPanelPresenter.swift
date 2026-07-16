@@ -220,20 +220,8 @@ final class MenuBarPanelPresenter: NSObject {
                 return
             }
 
-            guard let window = popover.contentViewController?.view.window else {
-                return
-            }
-
-            window.makeKey()
-            Self.clearAutomaticInitialFocus(in: window)
+            popover.contentViewController?.view.window?.makeKey()
         }
-    }
-
-    /// Prevent SwiftUI from leaving the first toolbar button focused when the
-    /// popover becomes key. Keyboard navigation can still focus controls
-    /// normally after the popover opens.
-    static func clearAutomaticInitialFocus(in window: NSWindow) {
-        window.makeFirstResponder(nil)
     }
 
     private func observeAppearancePreference() {
@@ -430,7 +418,7 @@ extension MenuBarPanelPresenter: NSPopoverDelegate {
     }
 }
 
-enum MenuBarPanelTab: CaseIterable, Equatable {
+enum MenuBarPanelTab: CaseIterable, Hashable {
     case components
     case features
 
@@ -658,6 +646,7 @@ private struct MenuBarPanelToolbar: View {
 private struct MenuBarPanelTabSwitcher: View {
     let selectedTab: MenuBarPanelTab
     let onTabSelection: (MenuBarPanelTab) -> Void
+    @FocusState private var focusedTab: MenuBarPanelTab?
 
     var body: some View {
         HStack(spacing: 2) {
@@ -676,6 +665,7 @@ private struct MenuBarPanelTabSwitcher: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .focused($focusedTab, equals: tab)
                 .help(tab.accessibilityTitle)
                 .accessibilityLabel(tab.accessibilityTitle)
                 .background {
@@ -689,6 +679,7 @@ private struct MenuBarPanelTabSwitcher: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(0.06))
         }
+        .defaultFocus($focusedTab, selectedTab)
     }
 }
 
